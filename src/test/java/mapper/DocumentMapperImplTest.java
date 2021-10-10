@@ -3,6 +3,7 @@ package mapper;
 import static java.util.Optional.ofNullable;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.Mockito.doReturn;
 import static test.extension.UidExtension.newEnum;
 import static test.extension.UidExtension.uidD;
 import static test.extension.UidExtension.uidDec;
@@ -16,9 +17,14 @@ import dto.StatusDto;
 import entity.Account;
 import entity.Document;
 import org.hamcrest.Matcher;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 import test.extension.UidExtension;
 import test.hamcrest.PropertiesMatcher;
 
@@ -27,19 +33,45 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * DocumentMapperTest.
+ * DocumentMapperImplTest.
  *
  * @author Roman_Erzhukov
  */
-@ExtendWith(UidExtension.class)
-class DocumentMapperTest {
+@ExtendWith({
+        MockitoExtension.class,
+        UidExtension.class
+})
+class DocumentMapperImplTest {
 
-    DocumentMapper subj = new DocumentMapperImpl();
+    DocumentMapperImpl subj = new DocumentMapperImpl();
+
+    @Spy
+    @InjectMocks
+    DocumentMapperImpl_ delegate;
+
+    @Mock
+    AccountMapper accountMapper;
+
+    @BeforeEach
+    void init() {
+        subj.setDelegate(delegate);
+    }
 
     @ParameterizedTest
     @MethodSource("toDtoArguments")
     void toDto(Document expected) {
-        assertThat(subj.toDto(expected), documentDto(expected));
+        var account1 = newAccountDto();
+        var account2 = newAccountDto();
+        List<Account> accounts = ofNullable(expected).map(Document::getAccounts).orElse(null);
+        List<AccountDto> expectedAccounts = accounts == null ? null : List.of(account1, account2);
+        if (accounts != null) {
+            doReturn(account1).when(accountMapper).toDto(accounts.get(0));
+            doReturn(account2).when(accountMapper).toDto(accounts.get(1));
+        }
+
+        DocumentDto actual = subj.toDto(expected);
+
+        assertThat(actual, documentDto(expected, expectedAccounts));
     }
 
     static Stream<Document> toDtoArguments() {
@@ -57,7 +89,7 @@ class DocumentMapperTest {
                 .setId(uidL())
                 .setAmount(uidDec())
                 .setStatus(newEnum(DocumentStatus.class))
-                .setAccounts(List.of(newAccount(), new Account()));
+                .setAccounts(List.of(newAccount(), newAccount()));
     }
 
     static Account newAccount() {
@@ -67,7 +99,7 @@ class DocumentMapperTest {
                 .setAccountNumber(uidS());
     }
 
-    Matcher<DocumentDto> documentDto(Document expected) {
+    Matcher<DocumentDto> documentDto(Document expected, List<AccountDto> expectedAccounts) {
         if (expected == null) {
             return nullValue(DocumentDto.class);
         }
@@ -79,10 +111,7 @@ class DocumentMapperTest {
                 .add("status", actual.getStatus(), expected.getStatus(), (a, e) -> matcher
                         .add("system", a.getSystem(), e)
                         .add("name", a.getName(), name(e)))
-                .addList("accounts", actual.getAccounts(), expected.getAccounts(), (a, e) -> matcher
-                        .add("id", a.getId(), e.getId())
-                        .add("bic", a.getBic(), e.getBic())
-                        .add("accountNumber", a.getAccountNumber(), e.getAccountNumber())));
+                .add("accounts", actual.getAccounts(), expectedAccounts));
     }
 
     String name(DocumentStatus status) {
@@ -103,7 +132,16 @@ class DocumentMapperTest {
     @ParameterizedTest
     @MethodSource("toEntityArguments")
     void toEntity(DocumentDto expected) {
-        assertThat(subj.toEntity(expected), document(expected));
+        var account1 = newAccount();
+        var account2 = newAccount();
+        List<AccountDto> accounts = ofNullable(expected).map(DocumentDto::getAccounts).orElse(null);
+        List<Account> expectedAccounts = accounts == null ? null : List.of(account1, account2);
+        if (accounts != null) {
+            doReturn(account1).when(accountMapper).toEntity(accounts.get(0));
+            doReturn(account2).when(accountMapper).toEntity(accounts.get(1));
+        }
+
+        assertThat(subj.toEntity(expected), document(expected, expectedAccounts));
     }
 
     static Stream<DocumentDto> toEntityArguments() {
@@ -123,7 +161,7 @@ class DocumentMapperTest {
                 .setStatus(new StatusDto()
                         .setSystem(newEnum(DocumentStatus.class))
                         .setName(uidS()))
-                .setAccounts(List.of(newAccountDto(), new AccountDto()));
+                .setAccounts(List.of(newAccountDto(), newAccountDto()));
     }
 
     static AccountDto newAccountDto() {
@@ -133,7 +171,7 @@ class DocumentMapperTest {
                 .setAccountNumber(uidS());
     }
 
-    Matcher<Document> document(DocumentDto expected) {
+    Matcher<Document> document(DocumentDto expected, List<Account> expectedAccounts) {
         if (expected == null) {
             return nullValue(Document.class);
         }
@@ -145,9 +183,6 @@ class DocumentMapperTest {
                 .add("status", actual.getStatus(), ofNullable(expected.getStatus())
                         .map(StatusDto::getSystem)
                         .orElse(null))
-                .addList("accounts", actual.getAccounts(), expected.getAccounts(), (a, e) -> matcher
-                        .add("id", a.getId(), e.getId())
-                        .add("bic", a.getBic(), e.getBic())
-                        .add("accountNumber", a.getAccountNumber(), e.getAccountNumber())));
+                .add("accounts", actual.getAccounts(), expectedAccounts));
     }
 }

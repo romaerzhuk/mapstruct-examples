@@ -11,7 +11,7 @@ import org.mapstruct.Mapping;
  *
  * @author Roman_Erzhukov
  */
-@Mapper
+@Mapper(uses = AccountMapper.class)
 @DecoratedWith(DocumentMapperDecorator.class)
 public interface DocumentMapper {
     @Mapping(target = "status", ignore = true)

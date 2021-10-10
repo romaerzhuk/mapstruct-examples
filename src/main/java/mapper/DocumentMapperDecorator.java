@@ -4,17 +4,21 @@ import dto.DocumentDto;
 import dto.DocumentStatus;
 import dto.StatusDto;
 import entity.Document;
-import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * DocumentMapperDecorator.
  *
  * @author Roman_Erzhukov
  */
-@RequiredArgsConstructor
 public abstract class DocumentMapperDecorator implements DocumentMapper {
 
-    private final DocumentMapper delegate;
+    @Setter
+    @Qualifier("delegate")
+    @Autowired
+    private DocumentMapper delegate;
 
     @Override
     public DocumentDto toDto(Document entity) {
@@ -45,5 +49,10 @@ public abstract class DocumentMapperDecorator implements DocumentMapper {
             default:
                 return "Исполнен";
         }
+    }
+
+    @Override
+    public Document toEntity(DocumentDto dto) {
+        return delegate.toEntity(dto);
     }
 }
