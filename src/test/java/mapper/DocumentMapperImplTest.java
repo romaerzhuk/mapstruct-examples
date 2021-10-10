@@ -60,13 +60,9 @@ class DocumentMapperImplTest {
     @ParameterizedTest
     @MethodSource("toDtoArguments")
     void toDto(Document expected) {
-        var account1 = newAccountDto();
-        var account2 = newAccountDto();
-        List<Account> accounts = ofNullable(expected).map(Document::getAccounts).orElse(null);
-        List<AccountDto> expectedAccounts = accounts == null ? null : List.of(account1, account2);
-        if (accounts != null) {
-            doReturn(account1).when(accountMapper).toDto(accounts.get(0));
-            doReturn(account2).when(accountMapper).toDto(accounts.get(1));
+        List<AccountDto> expectedAccounts = expected == null ? null : List.of(newAccountDto(), newAccountDto());
+        if (expected != null) {
+            doReturn(expectedAccounts).when(accountMapper).toDtoList(expected.getAccounts());
         }
 
         DocumentDto actual = subj.toDto(expected);
@@ -132,13 +128,9 @@ class DocumentMapperImplTest {
     @ParameterizedTest
     @MethodSource("toEntityArguments")
     void toEntity(DocumentDto expected) {
-        var account1 = newAccount();
-        var account2 = newAccount();
-        List<AccountDto> accounts = ofNullable(expected).map(DocumentDto::getAccounts).orElse(null);
-        List<Account> expectedAccounts = accounts == null ? null : List.of(account1, account2);
-        if (accounts != null) {
-            doReturn(account1).when(accountMapper).toEntity(accounts.get(0));
-            doReturn(account2).when(accountMapper).toEntity(accounts.get(1));
+        List<Account> expectedAccounts = expected == null ? null : List.of(newAccount(), newAccount());
+        if (expected != null) {
+            doReturn(expectedAccounts).when(accountMapper).toEntities(expected.getAccounts());
         }
 
         assertThat(subj.toEntity(expected), document(expected, expectedAccounts));

@@ -6,6 +6,8 @@ import org.mapstruct.DecoratedWith;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 /**
  * AccountMapper.
  *
@@ -17,5 +19,9 @@ public interface AccountMapper {
     @Mapping(target = "userName", ignore = true)
     AccountDto toDto(Account entity);
 
+    List<AccountDto> toDtoList(List<Account> entities);
+
     Account toEntity(AccountDto dto);
+
+    List<Account> toEntities(List<AccountDto> entities);
 }

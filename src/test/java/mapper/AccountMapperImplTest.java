@@ -1,8 +1,10 @@
 package mapper;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -13,6 +15,7 @@ import dto.AccountDto;
 import entity.Account;
 import entity.AccountService;
 import org.hamcrest.Matcher;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -23,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import test.extension.UidExtension;
 import test.hamcrest.PropertiesMatcher;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -34,6 +38,7 @@ import java.util.stream.Stream;
         MockitoExtension.class,
         UidExtension.class
 })
+@SuppressWarnings("unchecked")
 class AccountMapperImplTest {
 
     @InjectMocks
@@ -61,10 +66,24 @@ class AccountMapperImplTest {
     static Stream<Account> toDtoArguments() {
         return Stream.of(null,
                 new Account(),
-                new Account()
-                        .setId(uidL())
-                        .setBic(uidS())
-                        .setAccountNumber(uidS()));
+                newAccount());
+    }
+
+    @Test
+    void toDtoList() {
+        var account1 = newAccount();
+        var account2 = newAccount();
+        String userName = uidS();
+        doReturn(userName).when(service).userName(account1);
+
+        List<AccountDto> actual = subj.toDtoList(List.of(account1, account2));
+
+        assertThat(actual, contains(accountDto(account1, userName), accountDto(account2, null)));
+    }
+
+    @Test
+    void toDtoList_null() {
+        assertThat(subj.toDtoList(null), nullValue());
     }
 
     Matcher<AccountDto> accountDto(Account expected, String userName) {
@@ -78,6 +97,13 @@ class AccountMapperImplTest {
                 .add("userName", actual.getUserName(), userName));
     }
 
+    static Account newAccount() {
+        return new Account()
+                .setId(uidL())
+                .setBic(uidS())
+                .setAccountNumber(uidS());
+    }
+
     @ParameterizedTest
     @MethodSource("toEntityArguments")
     void toEntity(AccountDto expected) {
@@ -87,10 +113,22 @@ class AccountMapperImplTest {
     static Stream<AccountDto> toEntityArguments() {
         return Stream.of(null,
                 new AccountDto(),
-                new AccountDto()
-                        .setId(uidL())
-                        .setBic(uidS())
-                        .setAccountNumber(uidS()));
+                newAccountDto());
+    }
+
+    @Test
+    void toEntities() {
+        var account1 = newAccountDto();
+        var account2 = newAccountDto();
+
+        List<Account> actual = subj.toEntities(List.of(account1, account2));
+
+        assertThat(actual, contains(account(account1), account(account2)));
+    }
+
+    @Test
+    void toEntities_null() {
+        assertThat(subj.toEntities(null), nullValue());
     }
 
     Matcher<Account> account(AccountDto expected) {
@@ -101,5 +139,12 @@ class AccountMapperImplTest {
                 .add("id", actual.getId(), expected.getId())
                 .add("bic", actual.getBic(), expected.getBic())
                 .add("accountNumber", actual.getAccountNumber(), expected.getAccountNumber()));
+    }
+
+    static AccountDto newAccountDto() {
+        return new AccountDto()
+                .setId(uidL())
+                .setBic(uidS())
+                .setAccountNumber(uidS());
     }
 }
