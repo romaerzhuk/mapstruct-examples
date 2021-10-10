@@ -6,6 +6,7 @@ import dto.StatusDto;
 import entity.Document;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 /**
  * DocumentMapper.
@@ -14,9 +15,11 @@ import org.mapstruct.Mapping;
  */
 @Mapper
 public abstract class DocumentMapper {
+    @Mapping(source = "status", target = "status", qualifiedByName = "toStatusDto")
     public abstract DocumentDto toDto(Document entity);
 
-    StatusDto mapStatus(DocumentStatus status) {
+    @Named("toStatusDto")
+    StatusDto toStatusDto(DocumentStatus status) {
         if (status == null) {
             return null;
         }
