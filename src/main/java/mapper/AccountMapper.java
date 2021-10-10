@@ -2,6 +2,7 @@ package mapper;
 
 import dto.AccountDto;
 import entity.Account;
+import org.mapstruct.DecoratedWith;
 import org.mapstruct.Mapper;
 
 /**
@@ -9,7 +10,8 @@ import org.mapstruct.Mapper;
  *
  * @author Roman_Erzhukov
  */
-@Mapper
+@Mapper(componentModel = "spring")
+@DecoratedWith(AccountMapperDecorator.class)
 public interface AccountMapper {
     AccountDto toDto(Account entity);
 
