@@ -1,5 +1,6 @@
 package mapper;
 
+import static java.util.Optional.ofNullable;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static test.extension.UidExtension.newEnum;
@@ -21,8 +22,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import test.extension.UidExtension;
 import test.hamcrest.PropertiesMatcher;
 
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -72,7 +73,9 @@ class DocumentMapperTest {
         }
         return PropertiesMatcher.of(DocumentDto.class, (actual, matcher) -> matcher
                 .add("id", actual.getId(), expected.getId())
-                .add("amount", actual.getAmount(), expected.getAmount())
+                .add("amount", actual.getAmount(), ofNullable(expected.getAmount())
+                        .map(BigDecimal::doubleValue)
+                        .orElse(null))
                 .add("status", actual.getStatus(), expected.getStatus(), (a, e) -> matcher
                         .add("system", a.getSystem(), e)
                         .add("name", a.getName(), name(e)))
@@ -136,8 +139,10 @@ class DocumentMapperTest {
         }
         return PropertiesMatcher.of(Document.class, (actual, matcher) -> matcher
                 .add("id", actual.getId(), expected.getId())
-                .add("amount", actual.getAmount(), expected.getAmount())
-                .add("status", actual.getStatus(), Optional.ofNullable(expected.getStatus())
+                .add("amount", actual.getAmount(), ofNullable(expected.getAmount())
+                        .map(BigDecimal::valueOf)
+                        .orElse(null))
+                .add("status", actual.getStatus(), ofNullable(expected.getStatus())
                         .map(StatusDto::getSystem)
                         .orElse(null))
                 .addList("accounts", actual.getAccounts(), expected.getAccounts(), (a, e) -> matcher
